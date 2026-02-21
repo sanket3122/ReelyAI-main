@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+user_uploads/
+static/reels/
+Test/
+.claude
+done.txt

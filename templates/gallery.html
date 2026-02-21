@@ -1,0 +1,93 @@
+{% extends "base.html" %} {% block title %}Gallery - Reely{% endblock %} {%
+block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/gallery.css') }}"
+/>
+{% endblock %} {% block content %}
+<div class="container gallery-container">
+  <h1 class="gallery-title">Reel Gallery</h1>
+  {% if reels and reels|length > 0 %}
+  <div class="gallery-scroll">
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete reel?</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body">
+            <p class="delete-modal-text">
+              Are you sure you want to delete <span id="deleteReelName" class="delete-reel-name"></span>?
+            </p>
+            <p class="delete-modal-subtext">This cannot be undone.</p>
+          </div>
+
+          <div class="modal-footer delete-modal-footer">
+            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+
+            <form id="deleteForm" method="POST">
+              <button type="submit" class="btn-danger-soft">Yes, delete</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% for reel in reels %}
+    <div class="reel-card">
+      <div class="reel-thumbnail">
+        <video
+          src="{{ url_for('static', filename='reels/' ~ reel.file) }}"
+          playsinline
+          loop
+          controls
+        ></video>
+      </div>
+      <div class="reel-info">
+        <h3>{{ reel.title }}</h3>
+        <p>Created by: {{ reel.created_by }}</p>
+        <div class="reel-actions">
+        <button
+          type="button"
+          class="delete-btn"
+          data-bs-toggle="modal"
+          data-bs-target="#deleteModal"
+          data-reel-id="{{ reel.file[:-4] }}"
+          data-reel-title="{{ reel.title|e }}"
+        >
+          Delete
+        </button>
+      </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>Wow, such empty 🎬</h2>
+    <p>Create your first reel and it’ll show up here</p>
+    <a href="/create" class="cta-button">Create a Reel</a> <br />
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const modalEl = document.getElementById("deleteModal");
+  const deleteForm = document.getElementById("deleteForm");
+  const deleteReelName = document.getElementById("deleteReelName");
+
+  modalEl.addEventListener("show.bs.modal", (event) => {
+    const btn = event.relatedTarget;
+    const reelId = btn.getAttribute("data-reel-id");
+    const reelTitle = btn.getAttribute("data-reel-title") || "this reel";
+
+    deleteReelName.textContent = `"${reelTitle}"`;
+    deleteForm.action = `/reel/${reelId}/delete`;
+  });
+</script>
+{% endblock %}

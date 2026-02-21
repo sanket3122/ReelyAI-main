@@ -1,0 +1,8 @@
+flask
+gunicorn
+redis
+rq
+elevenlabs
+werkzeug
+requests
+python-dotenv

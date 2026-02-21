@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Create Reel - Reely{% endblock %}
+
+{% block extra_css %} 
+<link rel="stylesheet" href="{{ url_for('static', filename='css/create.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="upload-section">
+    <div class="container">
+        <div class="upload-container">
+            <h1 class="upload-title">Create Your Reel</h1>
+            <p class="upload-instructions">Upload your video files to create an amazing reel. You can upload multiple files.</p>
+            
+            <form action="/create" enctype="multipart/form-data" method="post" class="dropzone" id="myDropzone">
+                <div class="fallback">
+
+                    <!-- NEW: Reel name + User name -->
+                    <div class="meta-inputs">
+                        <div class="meta-field">
+                            <label class="meta-label" for="reelName">Reel Name</label>
+                            <input
+                                type="text"
+                                id="reelName"
+                                name="reel_name"
+                                class="meta-input"
+                                placeholder="e.g., My Winter Trip"
+                                required
+                            />
+                        </div>
+
+                        <div class="meta-field">
+                            <label class="meta-label" for="userName">Created By</label>
+                            <input
+                                type="text"
+                                id="userName"
+                                name="created_by"
+                                class="meta-input"
+                                placeholder="e.g., Sanket Bendale"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <input name="uuid" type="hidden" value="{{myid}}">
+
+                    <!-- Drag & Drop Area -->
+                    <div id="dropArea" class="drop-area">
+                    <div class="drop-area-inner">
+                        <div class="drop-title">Drag & drop your images/videos here</div>
+                        <div class="drop-subtitle">or click to choose multiple files</div>
+                        <button type="button" class="add-file-btn" id="chooseFilesBtn">Choose Files</button>
+                    </div>
+
+                    <!-- hidden input (supports multiple selection) -->
+                    <input id="fileInput" type="file" class="file-input-hidden" multiple accept="image/*,image/gif,video/*" />
+                    </div>
+
+                    <!-- Sortable list preview -->
+                    <div id="fileList" class="file-list"></div>
+
+                </div>
+                
+                <div class="text-input-container">
+                    <textarea
+                        class="text-input"
+                        id="textInput"
+                        name="text"
+                        placeholder="Enter your text to be added as voice here..."
+                        rows="4"
+                    ></textarea>
+
+                    <!-- NEW: Voice selection -->
+                    <div class="voice-row">
+                    <label class="voice-label" for="voiceSelect">Voice</label>
+
+                        <div class="voice-select-wrap">
+                            <select class="voice-select" id="voiceSelect" name="voice_id" required>
+                            <option value="JBFqnCBsd6RMkjVDRZzb">Adam - Dominant, Firm (default)</option>
+                            <option value="56AoDkrOh6qfVPDXZ7Pt">Cassidy - Crisp, Direct and Clear</option>
+                            <option value="Xb7hH8MSUJpSbSDYk0k2">Alice - Clear, Engaging Educator</option>
+                            <option value="UgBBYS2sOqTuMpoF3BR0">Mark - Natural Conversations</option>
+                            </select>
+                        </div>
+                        <button type="button" class="voice-preview-btn" id="voicePreviewBtn" title="Preview voice">
+                            <span class="preview-icon" id="previewIcon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                                    <polygon points="4,2 14,8 4,14" />
+                                </svg>
+                            </span>
+                            <span class="preview-label" id="previewLabel">Try Voice</span>
+                        </button>
+                    </div>
+
+                    <!-- Background Music -->
+                    <div class="music-section">
+                        <label class="music-label" for="musicPrompt">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18V5l12-2v13"/>
+                                <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                            </svg>
+                            Background Music
+                            <span class="music-optional">Optional</span>
+                        </label>
+                        <textarea
+                            class="text-input music-input"
+                            id="musicPrompt"
+                            name="music_prompt"
+                            placeholder="Describe the background music you want, e.g. 'chill lo-fi hip hop beats' or 'epic cinematic orchestral'..."
+                            rows="2"
+                        ></textarea>
+                        <p class="music-hint">Leave empty for no background music. Music will play softly behind the voice.</p>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Create Reel
+                    </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+  const dropArea = document.getElementById("dropArea");
+  const fileInput = document.getElementById("fileInput");
+  const chooseBtn = document.getElementById("chooseFilesBtn");
+  const fileList = document.getElementById("fileList");
+  const form = document.getElementById("myDropzone");
+
+  // We store files in the chosen order here
+  let filesStore = [];
+
+  function renderList() {
+    fileList.innerHTML = "";
+
+    filesStore.forEach((file, idx) => {
+      const row = document.createElement("div");
+      row.className = "file-row";
+      row.dataset.index = idx;
+
+      const left = document.createElement("div");
+      left.className = "file-left";
+
+      const handle = document.createElement("span");
+      handle.className = "drag-handle";
+      handle.title = "Drag to reorder";
+      handle.textContent = "⋮⋮";
+
+      const name = document.createElement("div");
+      name.className = "file-name";
+      name.textContent = file.name;
+
+      const meta = document.createElement("div");
+      meta.className = "file-meta";
+      meta.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+
+      left.appendChild(handle);
+      const nameWrap = document.createElement("div");
+      nameWrap.appendChild(name);
+      nameWrap.appendChild(meta);
+      left.appendChild(nameWrap);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "remove-file-btn";
+      remove.textContent = "×";
+      remove.onclick = () => {
+        filesStore.splice(idx, 1);
+        renderList();
+      };
+
+      row.appendChild(left);
+      row.appendChild(remove);
+      fileList.appendChild(row);
+    });
+  }
+
+  function addFiles(newFiles) {
+    // append, don't replace
+    for (const f of newFiles) filesStore.push(f);
+    renderList();
+  }
+
+  // click to choose
+  chooseBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", (e) => addFiles(e.target.files));
+
+  // drag over styling
+  ["dragenter", "dragover"].forEach(ev => {
+    dropArea.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropArea.classList.add("is-dragover");
+    });
+  });
+
+  ["dragleave", "drop"].forEach(ev => {
+    dropArea.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropArea.classList.remove("is-dragover");
+    });
+  });
+
+  // drop files
+  dropArea.addEventListener("drop", (e) => {
+    addFiles(e.dataTransfer.files);
+  });
+
+  // sortable reorder
+  new Sortable(fileList, {
+    animation: 150,
+    handle: ".drag-handle",
+    onEnd: (evt) => {
+      const [moved] = filesStore.splice(evt.oldIndex, 1);
+      filesStore.splice(evt.newIndex, 0, moved);
+      renderList();
+    }
+  });
+
+  // On submit: send files in THIS order
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const fd = new FormData(form);
+
+    // remove any previous "file*" entries, then add ours
+    // (FormData doesn't let us truly delete by wildcard; easiest is rebuild)
+    const fresh = new FormData();
+    for (const [k, v] of fd.entries()) {
+      // keep everything except file inputs (we're controlling them)
+      if (!k.startsWith("file")) fresh.append(k, v);
+    }
+
+    filesStore.forEach((file, i) => {
+      fresh.append(`file${i+1}`, file);
+    });
+
+    fetch(form.action, {
+      method: "POST",
+      body: fresh
+    }).then(res => {
+      if (res.redirected) window.location.href = res.url;
+      else return res.text().then(t => console.log(t));
+    }).catch(console.error);
+  });
+
+  // Voice preview
+  const previewBtn = document.getElementById("voicePreviewBtn");
+  const previewIcon = document.getElementById("previewIcon");
+  const previewLabel = document.getElementById("previewLabel");
+  const voiceSelect = document.getElementById("voiceSelect");
+  let previewAudio = null;
+  let previewCache = {};
+
+  const playSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14" /></svg>';
+  const stopSvg = '<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2" /></svg>';
+  const loadSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="8" /></svg>';
+
+  previewBtn.addEventListener("click", async () => {
+    // If already playing, stop it
+    if (previewAudio && !previewAudio.paused) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+      previewIcon.innerHTML = playSvg;
+      previewLabel.textContent = "Try Voice";
+      previewBtn.classList.remove("playing");
+      return;
+    }
+
+    const voiceId = voiceSelect.value;
+    previewIcon.innerHTML = loadSvg;
+    previewLabel.textContent = "Loading…";
+    previewBtn.classList.add("loading");
+
+    try {
+      let url = previewCache[voiceId];
+      if (!url) {
+        const resp = await fetch(`/api/voice-preview/${voiceId}`);
+        if (!resp.ok) throw new Error("Preview not available");
+        const data = await resp.json();
+        url = data.preview_url;
+        previewCache[voiceId] = url;
+      }
+
+      previewAudio = new Audio(url);
+      previewAudio.play();
+      previewBtn.classList.remove("loading");
+      previewBtn.classList.add("playing");
+      previewIcon.innerHTML = stopSvg;
+      previewLabel.textContent = "Stop";
+
+      previewAudio.addEventListener("ended", () => {
+        previewIcon.innerHTML = playSvg;
+        previewLabel.textContent = "Try Voice";
+        previewBtn.classList.remove("playing");
+      });
+    } catch (err) {
+      previewBtn.classList.remove("loading");
+      previewIcon.innerHTML = playSvg;
+      previewLabel.textContent = "Try Voice";
+      console.error("Voice preview failed:", err);
+    }
+  });
+</script>
+
+{% endblock %}
