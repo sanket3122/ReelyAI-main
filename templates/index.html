@@ -74,7 +74,7 @@
       charIndex++;
       if (charIndex === current.length) {
         isDeleting = true;
-        return setTimeout(tick, 1200); // pause after typing
+        return setTimeout(tick, 1200); 
       }
     } else {
       el.textContent = current.slice(0, charIndex - 1);
